@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
   username: {
     type: String,
     required: true,
@@ -9,13 +16,6 @@ const userSchema = new mongoose.Schema({
     trim: true,
     minlength: 3,
     maxlength: 50
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true
   },
   password: {
     type: String,
@@ -77,8 +77,6 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 // Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 userSchema.index({ restaurantId: 1 });
 
 module.exports = mongoose.model('User', userSchema);
