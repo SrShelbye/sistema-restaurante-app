@@ -78,7 +78,7 @@ class AuthController {
   // Register
   static async register(req, res) {
     try {
-      const { username, email, password, firstName, lastName, phone, restaurantName } = req.body;
+      const { username, email, password, firstName, lastName, phone, restaurantName, samePassword } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findOne({
@@ -90,6 +90,14 @@ class AuthController {
         return res.status(400).json({
           success: false,
           message: 'El usuario ya existe'
+        });
+      }
+
+      // Validate passwords match
+      if (password !== samePassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Las contraseñas no coinciden'
         });
       }
 
