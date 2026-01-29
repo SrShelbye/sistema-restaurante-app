@@ -63,7 +63,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 
 // Handle 404
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'Endpoint not found'
