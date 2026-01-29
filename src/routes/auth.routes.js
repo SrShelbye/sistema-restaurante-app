@@ -16,4 +16,7 @@ router.post('/logout', authenticateToken, AuthController.logout);
 // Get current user
 router.get('/me', authenticateToken, AuthController.getCurrentUser);
 
+// Renew token
+router.get('/renew', authenticateToken, AuthController.renewToken);
+
 module.exports = router;

@@ -227,6 +227,63 @@ class AuthController {
       });
     }
   }
+
+  // Renew token
+  static async renewToken(req, res) {
+    try {
+      const userId = req.user?.userId;
+
+      const user = await User.findById(userId).populate('restaurantId');
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      // Generate new JWT token
+      const payload = {
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role
+      };
+
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      });
+
+      let restaurant = null;
+      if (user.restaurantId) {
+        restaurant = await Restaurant.findById(user.restaurantId);
+      }
+
+      res.json({
+        success: true,
+        data: {
+          token,
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            online: user.online,
+            lastLogin: user.lastLogin,
+            restaurantId: user.restaurantId
+          },
+          restaurant
+        }
+      });
+    } catch (error) {
+      console.error('Renew token error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error en el servidor'
+      });
+    }
+  }
 }
 
 module.exports = AuthController;
