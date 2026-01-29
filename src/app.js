@@ -17,7 +17,7 @@ const server = createServer(app);
 // Socket.IO setup
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: true, // Allow all origins
     methods: ["GET", "POST"]
   }
 });
@@ -25,9 +25,9 @@ const io = new SocketIOServer(server, {
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - Allow all origins for development
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: true, // Allow all origins
   credentials: true
 }));
 

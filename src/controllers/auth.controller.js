@@ -78,7 +78,25 @@ class AuthController {
   // Register
   static async register(req, res) {
     try {
+      console.log('Register request body:', req.body);
+      
       const { username, email, password, firstName, lastName, phone, restaurantName, samePassword } = req.body;
+
+      // Basic validation
+      if (!username || !email || !password || !firstName || !lastName) {
+        return res.status(400).json({
+          success: false,
+          message: 'Faltan campos requeridos: username, email, password, firstName, lastName'
+        });
+      }
+
+      // Validate passwords match if provided
+      if (samePassword && password !== samePassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Las contraseñas no coinciden'
+        });
+      }
 
       // Check if user already exists
       const existingUser = await User.findOne({
@@ -93,14 +111,6 @@ class AuthController {
         });
       }
 
-      // Validate passwords match
-      if (password !== samePassword) {
-        return res.status(400).json({
-          success: false,
-          message: 'Las contraseñas no coinciden'
-        });
-      }
-
       // Create user
       const user = new User({
         username,
@@ -108,7 +118,7 @@ class AuthController {
         password,
         firstName,
         lastName,
-        phone,
+        phone: phone || '',
         role: 'admin' // First user is admin
       });
 
@@ -144,6 +154,8 @@ class AuthController {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       });
 
+      console.log('User registered successfully:', { username, email });
+
       res.status(201).json({
         success: true,
         data: {
@@ -164,7 +176,7 @@ class AuthController {
       console.error('Register error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error en el servidor'
+        message: 'Error en el servidor: ' + error.message
       });
     }
   }
