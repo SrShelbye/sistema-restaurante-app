@@ -36,6 +36,12 @@ const toFrontendRestaurant = (restaurant) => {
   };
 };
 
+const getJwtSecret = () => {
+  return process.env.JWT_SECRET && String(process.env.JWT_SECRET).trim()
+    ? process.env.JWT_SECRET
+    : null;
+};
+
 const toFrontendUser = (user, restaurant) => {
   const role = mapRole(user.role);
   const currentRestaurant = toFrontendRestaurant(restaurant);
@@ -108,13 +114,21 @@ class AuthController {
       await user.save();
 
       // Generate JWT token
+      const jwtSecret = getJwtSecret();
+      if (!jwtSecret) {
+        return res.status(500).json({
+          success: false,
+          message: 'JWT_SECRET no configurado en el servidor'
+        });
+      }
+
       const payload = {
         userId: user._id.toString(),
         email: user.email,
         role: user.role
       };
 
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      const token = jwt.sign(payload, jwtSecret, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       });
 
@@ -200,13 +214,21 @@ class AuthController {
       await user.save();
 
       // Generate JWT token
+      const jwtSecret = getJwtSecret();
+      if (!jwtSecret) {
+        return res.status(500).json({
+          success: false,
+          message: 'JWT_SECRET no configurado en el servidor'
+        });
+      }
+
       const payload = {
         userId: user._id.toString(),
         email: user.email,
         role: user.role
       };
 
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      const token = jwt.sign(payload, jwtSecret, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       });
 
@@ -303,13 +325,21 @@ class AuthController {
       }
 
       // Generate new JWT token
+      const jwtSecret = getJwtSecret();
+      if (!jwtSecret) {
+        return res.status(500).json({
+          success: false,
+          message: 'JWT_SECRET no configurado en el servidor'
+        });
+      }
+
       const payload = {
         userId: user._id.toString(),
         email: user.email,
         role: user.role
       };
 
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      const token = jwt.sign(payload, jwtSecret, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       });
 
