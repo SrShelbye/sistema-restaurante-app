@@ -151,27 +151,85 @@ saleSchema.methods.updateStock = async function() {
   if (this.stockUpdated) return this;
   
   const Ingredient = mongoose.model('Ingredient');
-  const Recipe = mongoose.model('Recipe');
+  const Product = mongoose.model('Product');
+  const lowStockAlerts = [];
   
   for (const item of this.items) {
-    if (item.productType === 'Recipe') {
-      // Get recipe ingredients
+    if (item.productType === 'Product') {
+      // Get product with recipe
+      const product = await Product.findById(item.productId);
+      if (product && product.recipe && product.recipe.length > 0) {
+        // Subtract ingredients from stock based on product recipe
+        for (const recipeItem of product.recipe) {
+          const quantityNeeded = recipeItem.grossQuantity * item.quantity;
+          
+          // Get current ingredient for stock check
+          const ingredient = await Ingredient.findById(recipeItem.ingredientId);
+          if (ingredient) {
+            const newStock = ingredient.currentStock - quantityNeeded;
+            
+            // Update stock
+            await Ingredient.findByIdAndUpdate(
+              recipeItem.ingredientId,
+              { 
+                $inc: { currentStock: -quantityNeeded },
+                lastPurchaseDate: new Date()
+              }
+            );
+            
+            // Check for low stock alert
+            if (newStock <= ingredient.minStock) {
+              lowStockAlerts.push({
+                ingredientId: recipeItem.ingredientId,
+                ingredientName: ingredient.name,
+                currentStock: newStock,
+                minStock: ingredient.minStock,
+                unit: ingredient.unit,
+                alertType: newStock <= 0 ? 'OUT_OF_STOCK' : 'LOW_STOCK'
+              });
+            }
+          }
+        }
+      }
+    } else if (item.productType === 'Recipe') {
+      // Handle Recipe type if needed
+      const Recipe = mongoose.model('Recipe');
       const recipe = await Recipe.findById(item.productId).populate('ingredients.ingredientId');
       if (recipe) {
-        // Subtract ingredients from stock
         for (const recipeItem of recipe.ingredients) {
           const quantityNeeded = recipeItem.quantity * item.quantity;
-          await Ingredient.findByIdAndUpdate(
-            recipeItem.ingredientId._id,
-            { $inc: { currentStock: -quantityNeeded } }
-          );
+          
+          const ingredient = await Ingredient.findById(recipeItem.ingredientId._id);
+          if (ingredient) {
+            const newStock = ingredient.currentStock - quantityNeeded;
+            
+            await Ingredient.findByIdAndUpdate(
+              recipeItem.ingredientId._id,
+              { 
+                $inc: { currentStock: -quantityNeeded },
+                lastPurchaseDate: new Date()
+              }
+            );
+            
+            if (newStock <= ingredient.minStock) {
+              lowStockAlerts.push({
+                ingredientId: recipeItem.ingredientId._id,
+                ingredientName: ingredient.name,
+                currentStock: newStock,
+                minStock: ingredient.minStock,
+                unit: ingredient.unit,
+                alertType: newStock <= 0 ? 'OUT_OF_STOCK' : 'LOW_STOCK'
+              });
+            }
+          }
         }
       }
     }
-    // If Product type, you might have different logic
   }
   
   this.stockUpdated = true;
+  this.lowStockAlerts = lowStockAlerts;
+  
   return this.save();
 };
 

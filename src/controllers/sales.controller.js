@@ -32,6 +32,20 @@ class SalesController {
       // Update stock automatically
       await sale.updateStock();
 
+      // Check for low stock alerts and emit socket event
+      if (sale.lowStockAlerts && sale.lowStockAlerts.length > 0) {
+        // Emit low stock alerts to dashboard
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`restaurant_${req.user.restaurantId}`).emit('lowStockAlert', {
+            saleId: sale._id,
+            saleNumber: sale.saleNumber,
+            alerts: sale.lowStockAlerts,
+            timestamp: new Date()
+          });
+        }
+      }
+
       await sale.populate([
         {
           path: 'items.productId',
@@ -45,7 +59,10 @@ class SalesController {
 
       res.status(201).json({
         success: true,
-        data: sale
+        data: {
+          ...sale.toObject(),
+          lowStockAlerts: sale.lowStockAlerts || []
+        }
       });
     } catch (error) {
       if (error.code === 11000) {
