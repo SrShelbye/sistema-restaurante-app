@@ -16,6 +16,11 @@ const purchasingRoutes = require('./routes/purchasing.routes');
 const salesRoutes = require('./routes/sales.routes');
 const reportsRoutes = require('./routes/reports.routes');
 const menuRoutes = require('./routes/menu.routes');
+const ordersRoutes = require('./routes/orders.routes');
+const tablesRoutes = require('./routes/tables.routes');
+const productionRoutes = require('./routes/production.routes');
+const cashRoutes = require('./routes/cash.routes');
+const clientsRoutes = require('./routes/clients.routes');
 
 const app = express();
 const server = createServer(app);
@@ -73,6 +78,11 @@ app.use('/api/purchasing', purchasingRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/menu', menuRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/tables', tablesRoutes);
+app.use('/api/production-areas', productionRoutes);
+app.use('/api/cash-register', cashRoutes);
+app.use('/api/clients', clientsRoutes);
 
 // Handle 404
 app.use((req, res) => {
