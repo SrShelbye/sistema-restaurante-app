@@ -5,14 +5,14 @@ const Restaurant = require('../models/Restaurant');
 const mapRole = (role) => {
   switch (role) {
     case 'admin':
-      return { id: 1, name: 'Administrador', description: 'Administrador del sistema' };
+      return { id: 1, name: 'admin', description: 'Administrador' };
     case 'despachador':
-      return { id: 2, name: 'Despachador', description: 'Despachador' };
+      return { id: 2, name: 'despachador', description: 'Despachador' };
     case 'gerente':
-      return { id: 3, name: 'Gerente', description: 'Gerente' };
+      return { id: 3, name: 'gerente', description: 'Gerente' };
     case 'mesero':
     default:
-      return { id: 4, name: 'Mesero', description: 'Mesero' };
+      return { id: 4, name: 'mesero', description: 'Mesero' };
   }
 };
 
