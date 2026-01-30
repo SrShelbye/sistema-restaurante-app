@@ -25,21 +25,44 @@ const clientsRoutes = require('./routes/clients.routes');
 const app = express();
 const server = createServer(app);
 
+// CORS configuration - Allow GitHub Pages and development origins
+const allowedOrigins = [
+  'https://srshelbye.github.io',
+  'https://srshelbye.github.io/sistema-restaurante-app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
+];
+
 // Socket.IO setup
 const io = new SocketIOServer(server, {
   cors: {
-    origin: true, // Allow all origins
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    credentials: true
   }
 });
 
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - Allow all origins for development
+// CORS configuration - Allow GitHub Pages and development origins
 app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count']
 }));
 
 // Rate limiting
