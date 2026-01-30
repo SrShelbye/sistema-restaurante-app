@@ -32,6 +32,17 @@ router.get('/reports/sales-performance',
   ReportsController.getSalesPerformance
 );
 
+// ✅ Financial reports
+router.get('/reports/daily-sales', 
+  authenticateToken, 
+  ReportsController.getDailySalesReport
+);
+
+router.get('/reports/financial-summary', 
+  authenticateToken, 
+  ReportsController.getFinancialSummary
+);
+
 // Dashboard metrics
 router.get('/reports/dashboard', 
   authenticateToken, 
