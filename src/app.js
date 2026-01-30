@@ -84,6 +84,39 @@ app.use('/api/production-areas', productionRoutes);
 app.use('/api/cash-register', cashRoutes);
 app.use('/api/clients', clientsRoutes);
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Restaurant Management API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      auth: '/api/auth',
+      inventory: '/api/inventory',
+      recipes: '/api/recipes',
+      purchasing: '/api/purchasing',
+      sales: '/api/sales',
+      reports: '/api/reports',
+      menu: '/api/menu',
+      orders: '/api/orders',
+      tables: '/api/tables',
+      production: '/api/production-areas',
+      cash: '/api/cash-register',
+      clients: '/api/clients'
+    }
+  });
+});
+
 // Handle 404
 app.use((req, res) => {
   res.status(404).json({
