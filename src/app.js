@@ -10,6 +10,12 @@ require('dotenv').config();
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
+const inventoryRoutes = require('./routes/inventory.routes');
+const recipeRoutes = require('./routes/recipe.routes');
+const purchasingRoutes = require('./routes/purchasing.routes');
+const salesRoutes = require('./routes/sales.routes');
+const reportsRoutes = require('./routes/reports.routes');
+const menuRoutes = require('./routes/menu.routes');
 
 const app = express();
 const server = createServer(app);
@@ -61,6 +67,12 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/recipes', recipeRoutes);
+app.use('/api/purchasing', purchasingRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/menu', menuRoutes);
 
 // Handle 404
 app.use((req, res) => {
