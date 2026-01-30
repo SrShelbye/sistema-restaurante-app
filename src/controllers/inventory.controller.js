@@ -147,6 +147,63 @@ class InventoryController {
     }
   }
 
+  static async getIngredientUsage(req, res) {
+    try {
+      const ingredientId = req.params.id;
+      const restaurantId = req.user.restaurantId;
+
+      // Find all recipes that use this ingredient
+      const Recipe = require('../models/Recipe');
+      const recipes = await Recipe.find({
+        restaurantId,
+        'recipeIngredients.ingredientId': ingredientId,
+        isActive: true
+      })
+        .populate('recipeIngredients.ingredientId', 'name unit')
+        .populate('name')
+        .select('name description recipeIngredients');
+
+      // Find all semifinished products that use this ingredient
+      const Semifinished = require('../models/Semifinished');
+      const semifinishedProducts = await Semifinished.find({
+        restaurantId,
+        'recipeIngredients.ingredientId': ingredientId,
+        isActive: true
+      })
+        .populate('recipeIngredients.ingredientId', 'name unit')
+        .populate('name')
+        .select('name description recipeIngredients');
+
+      const usage = {
+        ingredientId,
+        usedInRecipes: recipes.map(recipe => ({
+          id: recipe._id,
+          name: recipe.name,
+          type: 'recipe',
+          quantity: recipe.recipeIngredients.find(ri => ri.ingredientId.toString() === ingredientId)?.grossQuantity || 0,
+          unit: recipe.recipeIngredients.find(ri => ri.ingredientId.toString() === ingredientId)?.ingredientId?.unit || 'unidad'
+        })),
+        usedInSemifinished: semifinishedProducts.map(product => ({
+          id: product._id,
+          name: product.name,
+          type: 'semifinished',
+          quantity: product.recipeIngredients.find(ri => ri.ingredientId.toString() === ingredientId)?.grossQuantity || 0,
+          unit: product.recipeIngredients.find(ri => ri.ingredientId.toString() === ingredientId)?.ingredientId?.unit || 'unidad'
+        }))
+      };
+
+      res.json({
+        success: true,
+        data: usage
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
   static async deleteIngredient(req, res) {
     try {
       const ingredient = await Ingredient.findOneAndUpdate(

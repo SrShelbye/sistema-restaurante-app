@@ -39,6 +39,11 @@ router.patch('/ingredients/:id/stock',
   InventoryController.updateStock
 );
 
+router.get('/ingredients/:id/usage', 
+  authenticateToken, 
+  InventoryController.getIngredientUsage
+);
+
 // Semifinished routes
 router.post('/semifinished', 
   authenticateToken, 
