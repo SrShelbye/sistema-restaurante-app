@@ -2,14 +2,88 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 
+const mapRole = (role) => {
+  switch (role) {
+    case 'admin':
+      return { id: 1, name: 'Administrador', description: 'Administrador del sistema' };
+    case 'despachador':
+      return { id: 2, name: 'Despachador', description: 'Despachador' };
+    case 'gerente':
+      return { id: 3, name: 'Gerente', description: 'Gerente' };
+    case 'mesero':
+    default:
+      return { id: 4, name: 'Mesero', description: 'Mesero' };
+  }
+};
+
+const toFrontendRestaurant = (restaurant) => {
+  if (!restaurant) return null;
+
+  return {
+    id: restaurant._id.toString(),
+    name: restaurant.name,
+    logo: restaurant.logo || '',
+    address: restaurant.address,
+    capacity: restaurant.capacity,
+    identification: '',
+    phone: restaurant.phone,
+    email: restaurant.email,
+    percentageAttendance: 0,
+    simulationEndDate: '',
+    simulationStartDate: '',
+    lastSimulationUpdate: '',
+    lastPredictionUpdate: Date.now()
+  };
+};
+
+const toFrontendUser = (user, restaurant) => {
+  const role = mapRole(user.role);
+  const currentRestaurant = toFrontendRestaurant(restaurant);
+
+  return {
+    id: user._id.toString(),
+    username: user.username,
+    person: {
+      id: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      numPhone: user.phone || ''
+    },
+    online: user.online,
+    restaurantRoles: currentRestaurant
+      ? [
+          {
+            id: 1,
+            restaurant: currentRestaurant,
+            role
+          }
+        ]
+      : [],
+    isActive: user.isActive,
+    role
+  };
+};
+
 class AuthController {
   // Login
   static async login(req, res) {
     try {
-      const { email, password } = req.body;
+      const { email, username, password } = req.body;
+      const identifier = email || username;
+
+      if (!identifier || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Faltan credenciales'
+        });
+      }
 
       // Find user by email
-      const user = await User.findOne({ email, isActive: true }).populate('restaurantId');
+      const user = await User.findOne({
+        $or: [{ email: identifier }, { username: identifier }],
+        isActive: true
+      }).populate('restaurantId');
       
       if (!user) {
         return res.status(401).json({
@@ -44,27 +118,13 @@ class AuthController {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d'
       });
 
-      // Get restaurant if user has one
       let restaurant = null;
-      if (user.restaurantId) {
-        restaurant = await Restaurant.findById(user.restaurantId);
-      }
+      if (user.restaurantId) restaurant = await Restaurant.findById(user.restaurantId);
 
       res.json({
-        success: true,
-        data: {
-          token,
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            restaurantId: user.restaurantId
-          },
-          restaurant
-        }
+        token,
+        user: toFrontendUser(user, restaurant),
+        currentRestaurant: toFrontendRestaurant(restaurant)
       });
     } catch (error) {
       console.error('Login error:', error);
@@ -80,7 +140,8 @@ class AuthController {
     try {
       console.log('Register request body:', req.body);
       
-      const { username, email, password, firstName, lastName, phone, restaurantName, samePassword } = req.body;
+      const { username, email, password, firstName, lastName, phone, numPhone, restaurantName, samePassword } = req.body;
+      const phoneValue = phone || numPhone || '';
 
       // Basic validation
       if (!username || !email || !password || !firstName || !lastName) {
@@ -118,30 +179,25 @@ class AuthController {
         password,
         firstName,
         lastName,
-        phone: phone || '',
+        phone: phoneValue,
         role: 'admin' // First user is admin
       });
 
       await user.save();
 
-      // Create restaurant if provided
-      let restaurant = null;
-      if (restaurantName) {
-        restaurant = new Restaurant({
-          name: restaurantName,
-          address: 'Dirección por defecto',
-          phone: phone || '0000000000',
-          email: email,
-          capacity: 20,
-          owner: user._id
-        });
+      let restaurant = new Restaurant({
+        name: restaurantName || `Restaurante de ${firstName}`,
+        address: 'Dirección por defecto',
+        phone: phoneValue || '0000000000',
+        email: email,
+        capacity: 20,
+        owner: user._id
+      });
 
-        await restaurant.save();
+      await restaurant.save();
 
-        // Link restaurant to user
-        user.restaurantId = restaurant._id;
-        await user.save();
-      }
+      user.restaurantId = restaurant._id;
+      await user.save();
 
       // Generate JWT token
       const payload = {
@@ -157,23 +213,20 @@ class AuthController {
       console.log('User registered successfully:', { username, email });
 
       res.status(201).json({
-        success: true,
-        data: {
-          token,
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            restaurantId: user.restaurantId
-          },
-          restaurant
-        }
+        token,
+        user: toFrontendUser(user, restaurant),
+        currentRestaurant: toFrontendRestaurant(restaurant)
       });
     } catch (error) {
       console.error('Register error:', error);
+
+      if (error && error.code === 11000) {
+        return res.status(400).json({
+          success: false,
+          message: 'El usuario ya existe'
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: 'Error en el servidor: ' + error.message
@@ -223,21 +276,8 @@ class AuthController {
       }
 
       res.json({
-        success: true,
-        data: {
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            online: user.online,
-            lastLogin: user.lastLogin,
-            restaurantId: user.restaurantId
-          },
-          restaurant
-        }
+        user: toFrontendUser(user, restaurant),
+        currentRestaurant: toFrontendRestaurant(restaurant)
       });
     } catch (error) {
       console.error('Get current user error:', error);
@@ -279,22 +319,9 @@ class AuthController {
       }
 
       res.json({
-        success: true,
-        data: {
-          token,
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            online: user.online,
-            lastLogin: user.lastLogin,
-            restaurantId: user.restaurantId
-          },
-          restaurant
-        }
+        token,
+        user: toFrontendUser(user, restaurant),
+        currentRestaurant: toFrontendRestaurant(restaurant)
       });
     } catch (error) {
       console.error('Renew token error:', error);
