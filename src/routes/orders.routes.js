@@ -20,6 +20,11 @@ router.get('/actives',
   OrdersController.getActiveOrders
 );
 
+router.get('/production-area/:productionAreaId', 
+  authenticateToken, 
+  OrdersController.getOrdersByProductionArea
+);
+
 router.get('/:id', 
   authenticateToken, 
   OrdersController.getOrder

@@ -10,11 +10,27 @@ class OrdersController {
         createdBy: req.user.userId || req.body.createdBy
       };
 
-      // Calculate totals
+      // Calculate totals and group by production area
       let subtotal = 0;
+      const productionAreaGroups = {};
+      
       orderData.details = orderData.details.map(detail => {
         const totalPrice = detail.quantity * detail.unitPrice;
         subtotal += totalPrice;
+        
+        // Group by production area
+        const areaId = detail.productionAreaId;
+        if (!productionAreaGroups[areaId]) {
+          productionAreaGroups[areaId] = {
+            items: [],
+            totalItems: 0,
+            subtotal: 0
+          };
+        }
+        productionAreaGroups[areaId].items.push(detail);
+        productionAreaGroups[areaId].totalItems += detail.quantity;
+        productionAreaGroups[areaId].subtotal += totalPrice;
+        
         return {
           ...detail,
           totalPrice
@@ -23,6 +39,7 @@ class OrdersController {
 
       orderData.subtotal = subtotal;
       orderData.total = subtotal + (orderData.taxAmount || 0);
+      orderData.productionAreaGroups = productionAreaGroups;
 
       const order = new Order(orderData);
       await order.save();
@@ -71,54 +88,125 @@ class OrdersController {
     }
   }
 
-  static async getOrders(req, res) {
+  static async getOrdersByProductionArea(req, res) {
     try {
-      const {
-        page = 1,
-        limit = 50,
-        status,
-        tableId,
-        startDate,
-        endDate,
-        search
-      } = req.query;
+      const { productionAreaId, page = 1, limit = 50, status } = req.query;
+      const restaurantId = req.user.restaurantId;
 
-      const restaurantId = req.user.restaurantId || req.query.restaurantId;
       const filter = { restaurantId };
-
       if (status) filter.status = status;
-      if (tableId) filter.tableId = tableId;
-      if (search) {
-        filter.orderNumber = { $regex: search, $options: 'i' };
-      }
-
-      if (startDate || endDate) {
-        filter.createdAt = {};
-        if (startDate) filter.createdAt.$gte = new Date(startDate);
-        if (endDate) filter.createdAt.$lte = new Date(endDate);
-      }
 
       const orders = await Order.find(filter)
-        .populate('tableId', 'number capacity location status')
-        .populate('details.productId', 'name category')
-        .populate('createdBy', 'username firstName lastName')
+        .populate([
+          {
+            path: 'tableId',
+            select: 'number capacity location status'
+          },
+          {
+            path: 'details.productId',
+            select: 'name category'
+          },
+          {
+            path: 'details.productId',
+            populate: {
+              path: 'productionAreaId',
+              select: 'name description'
+            }
+          }
+        ])
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .sort({ createdAt: -1 });
 
-      const total = await Order.countDocuments(filter);
+      // Filter orders that have items in the specified production area
+      const filteredOrders = orders.filter(order => 
+        order.details.some(detail => 
+          detail.productId && 
+          detail.productId.productionAreaId && 
+          detail.productId.productionAreaId.toString() === productionAreaId
+        )
+      );
+
+      const total = filteredOrders.length;
 
       res.json({
         success: true,
         data: {
-          orders,
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total,
-            pages: Math.ceil(total / limit)
-          }
+          orders: filteredOrders,
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit)
         }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  static async getActiveOrders(req, res) {
+    try {
+      const {
+        page = 1,
+        limit = 50,
+        offset = 0,
+        startDate,
+        endDate,
+        period = 'yearly'
+      } = req.query;
+
+      const restaurantId = req.user.restaurantId;
+      const filter = {
+        restaurantId,
+        status: 'active'
+      };
+
+      if (startDate && endDate) {
+        filter.createdAt = {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate)
+        };
+      }
+
+      const orders = await Order.find(filter)
+        .populate([
+          {
+            path: 'tableId',
+            select: 'number capacity location status'
+          },
+          {
+            path: 'details.productId',
+            select: 'name category'
+          },
+          {
+            path: 'details.productId',
+            populate: {
+              path: 'productionAreaId',
+              select: 'name description'
+            }
+          }
+        ])
+        .limit(limit)
+        .skip(offset)
+        .sort({ createdAt: -1 });
+
+      // Group orders by production area
+      const ordersWithAreas = await Promise.all(
+        orders.map(async (order) => {
+          const groupedAreas = await order.groupByProductionArea();
+          return {
+            ...order.toObject(),
+            productionAreaGroups: groupedAreas
+          };
+        })
+      );
+
+      res.json({
+        success: true,
+        data: ordersWithAreas
       });
     } catch (error) {
       res.status(500).json({
