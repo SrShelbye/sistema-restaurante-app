@@ -5,38 +5,38 @@ const { authenticateToken, requireRole } = require('../middleware/auth.middlewar
 const router = express.Router();
 
 // Order CRUD routes
-router.post('/orders', 
+router.post('/', 
   authenticateToken, 
   OrdersController.createOrder
 );
 
-router.get('/orders', 
+router.get('/', 
   authenticateToken, 
   OrdersController.getOrders
 );
 
-router.get('/orders/actives', 
+router.get('/actives', 
   authenticateToken, 
   OrdersController.getActiveOrders
 );
 
-router.get('/orders/:id', 
+router.get('/:id', 
   authenticateToken, 
   OrdersController.getOrder
 );
 
-router.put('/orders/:id', 
+router.put('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   OrdersController.updateOrder
 );
 
-router.post('/orders/:id/complete', 
+router.post('/:id/complete', 
   authenticateToken, 
   OrdersController.completeOrder
 );
 
-router.post('/orders/:id/cancel', 
+router.post('/:id/cancel', 
   authenticateToken, 
   requireRole(['admin']), 
   OrdersController.cancelOrder

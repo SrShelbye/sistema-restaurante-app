@@ -5,29 +5,29 @@ const { authenticateToken, requireRole } = require('../middleware/auth.middlewar
 const router = express.Router();
 
 // Client CRUD routes
-router.post('/clients', 
+router.post('/', 
   authenticateToken, 
   requireRole(['admin']), 
   ClientsController.createClient
 );
 
-router.get('/clients', 
+router.get('/', 
   authenticateToken, 
   ClientsController.getClients
 );
 
-router.get('/clients/:id', 
+router.get('/:id', 
   authenticateToken, 
   ClientsController.getClient
 );
 
-router.put('/clients/:id', 
+router.put('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   ClientsController.updateClient
 );
 
-router.delete('/clients/:id', 
+router.delete('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   ClientsController.deleteClient

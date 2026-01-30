@@ -5,40 +5,40 @@ const { authenticateToken, requireRole } = require('../middleware/auth.middlewar
 const router = express.Router();
 
 // Table CRUD routes
-router.post('/tables', 
+router.post('/', 
   authenticateToken, 
   requireRole(['admin']), 
   TablesController.createTable
 );
 
-router.get('/tables', 
+router.get('/', 
   authenticateToken, 
   TablesController.getTables
 );
 
-router.get('/tables/:id', 
+router.get('/:id', 
   authenticateToken, 
   TablesController.getTable
 );
 
-router.put('/tables/:id', 
+router.put('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   TablesController.updateTable
 );
 
-router.delete('/tables/:id', 
+router.delete('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   TablesController.deleteTable
 );
 
-router.patch('/tables/:id/status', 
+router.patch('/:id/status', 
   authenticateToken, 
   TablesController.updateTableStatus
 );
 
-router.get('/tables/status', 
+router.get('/status', 
   authenticateToken, 
   TablesController.getTableStatus
 );

@@ -5,33 +5,33 @@ const { authenticateToken, requireRole } = require('../middleware/auth.middlewar
 const router = express.Router();
 
 // Cash Register routes
-router.post('/cash-register/open', 
+router.post('/open', 
   authenticateToken, 
   CashController.openCashRegister
 );
 
-router.get('/cash-register/actives', 
+router.get('/actives', 
   authenticateToken, 
   CashController.getActiveCashRegisters
 );
 
-router.post('/cash-register/:id/close', 
+router.post('/:id/close', 
   authenticateToken, 
   requireRole(['admin']), 
   CashController.closeCashRegister
 );
 
-router.post('/cash-register/:id/transaction', 
+router.post('/:id/transaction', 
   authenticateToken, 
   CashController.addTransaction
 );
 
-router.get('/cash-register/history', 
+router.get('/history', 
   authenticateToken, 
   CashController.getCashRegisterHistory
 );
 
-router.get('/cash-register/summary', 
+router.get('/summary', 
   authenticateToken, 
   CashController.getCashRegisterSummary
 );

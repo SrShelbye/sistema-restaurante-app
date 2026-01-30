@@ -5,29 +5,29 @@ const { authenticateToken, requireRole } = require('../middleware/auth.middlewar
 const router = express.Router();
 
 // Production Area CRUD routes
-router.post('/production-areas', 
+router.post('/', 
   authenticateToken, 
   requireRole(['admin']), 
   ProductionController.createProductionArea
 );
 
-router.get('/production-areas', 
+router.get('/', 
   authenticateToken, 
   ProductionController.getProductionAreas
 );
 
-router.get('/production-areas/:id', 
+router.get('/:id', 
   authenticateToken, 
   ProductionController.getProductionArea
 );
 
-router.put('/production-areas/:id', 
+router.put('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   ProductionController.updateProductionArea
 );
 
-router.delete('/production-areas/:id', 
+router.delete('/:id', 
   authenticateToken, 
   requireRole(['admin']), 
   ProductionController.deleteProductionArea
