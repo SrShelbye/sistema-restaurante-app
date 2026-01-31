@@ -147,7 +147,7 @@ class OrdersController {
     }
   }
 
-  static async getActiveOrders(req, res) {
+  static async getOrders(req, res) {
     try {
       const {
         page = 1,
@@ -159,10 +159,7 @@ class OrdersController {
       } = req.query;
 
       const restaurantId = req.user.restaurantId;
-      const filter = {
-        restaurantId,
-        status: 'active'
-      };
+      const filter = { restaurantId };
 
       if (startDate && endDate) {
         filter.createdAt = {
@@ -193,20 +190,9 @@ class OrdersController {
         .skip(offset)
         .sort({ createdAt: -1 });
 
-      // Group orders by production area
-      const ordersWithAreas = await Promise.all(
-        orders.map(async (order) => {
-          const groupedAreas = await order.groupByProductionArea();
-          return {
-            ...order.toObject(),
-            productionAreaGroups: groupedAreas
-          };
-        })
-      );
-
       res.json({
         success: true,
-        data: ordersWithAreas
+        data: orders
       });
     } catch (error) {
       res.status(500).json({
@@ -285,7 +271,7 @@ class OrdersController {
     }
   }
 
-  static async getOrder(req, res) {
+  static async getOrderById(req, res) {
     try {
       const order = await Order.findOne({
         _id: req.params.id,
@@ -428,4 +414,15 @@ class OrdersController {
   }
 }
 
-module.exports = OrdersController;
+module.exports = {
+  createOrder: OrdersController.createOrder,
+  getOrders: OrdersController.getOrders,
+  getOrderById: OrdersController.getOrderById,
+  updateOrder: OrdersController.updateOrder,
+  deleteOrder: OrdersController.deleteOrder,
+  getActiveOrders: OrdersController.getActiveOrders,
+  getOrdersByProductionArea: OrdersController.getOrdersByProductionArea,
+  updateOrderDetailStatus: OrdersController.updateOrderDetailStatus,
+  completeOrder: OrdersController.completeOrder,
+  cancelOrder: OrdersController.cancelOrder
+};

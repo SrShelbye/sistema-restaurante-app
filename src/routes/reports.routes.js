@@ -10,28 +10,6 @@ router.get('/reports/inventory-valuation',
   ReportsController.getInventoryValuation
 );
 
-router.get('/reports/ingredient-usage', 
-  authenticateToken, 
-  ReportsController.getIngredientUsage
-);
-
-// Cost analysis reports
-router.get('/reports/cost-analysis', 
-  authenticateToken, 
-  ReportsController.getCostAnalysis
-);
-
-router.get('/reports/profitability', 
-  authenticateToken, 
-  ReportsController.getProfitabilityReport
-);
-
-// Sales performance reports
-router.get('/reports/sales-performance', 
-  authenticateToken, 
-  ReportsController.getSalesPerformance
-);
-
 // ✅ Financial reports
 router.get('/reports/daily-sales', 
   authenticateToken, 
@@ -41,12 +19,6 @@ router.get('/reports/daily-sales',
 router.get('/reports/financial-summary', 
   authenticateToken, 
   ReportsController.getFinancialSummary
-);
-
-// Dashboard metrics
-router.get('/reports/dashboard', 
-  authenticateToken, 
-  ReportsController.getDashboardMetrics
 );
 
 module.exports = router;

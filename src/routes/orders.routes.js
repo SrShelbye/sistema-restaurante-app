@@ -27,7 +27,7 @@ router.get('/production-area/:productionAreaId',
 
 router.get('/:id', 
   authenticateToken, 
-  OrdersController.getOrder
+  OrdersController.getOrderById
 );
 
 router.put('/:id', 

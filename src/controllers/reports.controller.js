@@ -240,4 +240,8 @@ class ReportsController {
   }
 }
 
-module.exports = ReportsController;
+module.exports = {
+  getInventoryValuation: ReportsController.getInventoryValuation,
+  getDailySalesReport: ReportsController.getDailySalesReport,
+  getFinancialSummary: ReportsController.getFinancialSummary
+};
